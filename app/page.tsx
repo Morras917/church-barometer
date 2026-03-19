@@ -88,7 +88,7 @@ export default function Home() {
       {/* Dark overlay so text stays readable */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'rgba(0, 0, 0, 0.62)',
+        background: 'rgba(0, 0, 0, 0.35)',
         backdropFilter: 'blur(1px)',
         zIndex: 0,
       }} />
