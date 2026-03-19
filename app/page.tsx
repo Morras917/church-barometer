@@ -4,14 +4,12 @@ import { supabase } from '@/lib/supabase'
 
 const GOAL = 500000
 const CURRENCY = 'R'
-// First R5000 fills the bulb, rest fills the tube
 const BULB_THRESHOLD = 5000
 
 function formatCurrency(amount: number) {
   return CURRENCY + new Intl.NumberFormat('en-ZA').format(Math.round(amount))
 }
 
-// R50k increments: 50000, 100000, ... 500000
 const MILESTONES = Array.from({ length: 10 }, (_, i) => {
   const val = (i + 1) * 50000
   const color =
@@ -25,16 +23,17 @@ const MILESTONES = Array.from({ length: 10 }, (_, i) => {
 const TUBE_HEIGHT = 420
 const BULB_SIZE = 80
 
-// ---- Confetti component ----
 function Confetti() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
-    const pieces: {x:number,y:number,r:number,d:number,color:string,tilt:number,tiltAngle:number,tiltAngleIncrement:number}[] = []
+    type Piece = { x:number; y:number; r:number; d:number; color:string; tilt:number; tiltAngle:number; tiltAngleIncrement:number }
+    const pieces: Piece[] = []
     const colors = ['#c5a028','#f0c040','#4a9eff','#ff6b6b','#51cf66','#cc5de8','#ff922b','#fff']
     for (let i = 0; i < 200; i++) {
       pieces.push({
@@ -51,6 +50,7 @@ function Confetti() {
     let angle = 0
     let frame: number
     function draw() {
+      if (!ctx || !canvas) return
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       angle += 0.01
       pieces.forEach((p, i) => {
@@ -122,12 +122,10 @@ export default function Home() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  // Tube fill: 0 while amount <= BULB_THRESHOLD, then rises
   const tubePct = amount <= BULB_THRESHOLD
     ? 0
     : Math.min(((amount - BULB_THRESHOLD) / (GOAL - BULB_THRESHOLD)) * 100, 100)
 
-  // Capped pct for colours (max 100)
   const pct = Math.min((amount / GOAL) * 100, 100)
   const overGoal = amount > GOAL
   const excess = overGoal ? amount - GOAL : 0
@@ -139,9 +137,7 @@ export default function Home() {
     pct >= 20  ? '#4a9eff' :
                  '#2d6aad'
 
-  const overColor = '#cc5de8'  // purple for over-goal amount
-
-  // Bulb fill: empty at 0, full at BULB_THRESHOLD+
+  const overColor = '#cc5de8'
   const bulbFilled = amount > 0
 
   if (loading) {
@@ -172,7 +168,6 @@ export default function Home() {
     }}>
       {showConfetti && <Confetti />}
 
-      {/* Dark overlay */}
       <div style={{
         position: 'absolute', inset: 0,
         background: 'rgba(0, 0, 0, 0.35)',
@@ -182,7 +177,6 @@ export default function Home() {
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-        {/* Title */}
         <h1 style={{
           fontSize: 'clamp(1.3rem, 3.5vw, 2.6rem)',
           fontWeight: 700,
@@ -210,12 +204,9 @@ export default function Home() {
           Goal: {formatCurrency(GOAL)}
         </p>
 
-        {/* Barometer */}
         <div style={{ position: 'relative', width: '200px', height: `${TUBE_HEIGHT + BULB_SIZE + 20}px`, margin: '0 auto 2rem' }}>
 
-          {/* R50k milestone ticks on the tube */}
           {MILESTONES.map(m => {
-            // position along tube (above bulb area)
             const mileTubePct = ((m.val - BULB_THRESHOLD) / (GOAL - BULB_THRESHOLD)) * 100
             const bottomPx = (mileTubePct / 100) * TUBE_HEIGHT + BULB_SIZE / 2 + 10
             const reached = amount >= m.val
@@ -247,7 +238,6 @@ export default function Home() {
             )
           })}
 
-          {/* Glass tube */}
           <div style={{
             position: 'absolute',
             top: 0,
@@ -271,7 +261,6 @@ export default function Home() {
             }} />
           </div>
 
-          {/* Bulb - empty circle at 0, fills at first donation */}
           <div style={{
             position: 'absolute',
             top: `${TUBE_HEIGHT - BULB_SIZE / 2 + 3}px`,
@@ -287,7 +276,6 @@ export default function Home() {
           }} />
         </div>
 
-        {/* Amount display */}
         <div style={{
           textAlign: 'center',
           background: 'rgba(0,0,0,0.5)',
@@ -297,7 +285,6 @@ export default function Home() {
           boxShadow: overGoal ? `0 0 20px ${overColor}40` : 'none',
           transition: 'border 0.5s, box-shadow 0.5s',
         }}>
-          {/* Main amount - only show up to goal in gold */}
           <div style={{
             fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
             fontWeight: 700,
@@ -309,7 +296,6 @@ export default function Home() {
             {formatCurrency(Math.min(amount, GOAL))}
           </div>
 
-          {/* Over-goal excess shown separately in purple */}
           {overGoal && (
             <div style={{
               fontSize: 'clamp(1rem, 3vw, 1.8rem)',
@@ -332,7 +318,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Goal reached celebration banner */}
         {amount >= GOAL && (
           <div style={{
             marginTop: '1.5rem',
