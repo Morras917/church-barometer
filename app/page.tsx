@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
@@ -17,12 +16,14 @@ const MILESTONES = [
   { pct: 100, label: 'GOAL!', color: '#c5a028' },
 ]
 
+// Tube height in px (must match the height in the JSX below)
+const TUBE_HEIGHT = 360
+
 export default function Home() {
   const [amount, setAmount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Initial fetch
     supabase
       .from('church_barometer')
       .select('amount_raised')
@@ -33,7 +34,6 @@ export default function Home() {
         setLoading(false)
       })
 
-    // Realtime subscription
     const channel = supabase
       .channel('barometer')
       .on('postgres_changes', {
@@ -45,15 +45,25 @@ export default function Home() {
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const pct = Math.min((amount / GOAL) * 100, 100)
-  const fillColor = pct >= 100 ? '#c5a028' : pct >= 75 ? '#e07b00' : pct >= 50 ? '#f0a500' : pct >= 25 ? '#4a9eff' : '#2d6aad'
+  const fillColor =
+    pct >= 100 ? '#c5a028' :
+    pct >= 75  ? '#e07b00' :
+    pct >= 50  ? '#f0a500' :
+    pct >= 25  ? '#4a9eff' :
+                 '#2d6aad'
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: '1.5rem', color: '#e8d5a3' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', fontSize: '1.5rem', color: '#e8d5a3'
+      }}>
         Loading...
       </div>
     )
@@ -85,15 +95,37 @@ export default function Home() {
       </p>
 
       {/* Barometer */}
-      <div style={{ position: 'relative', width: '120px', height: '400px', margin: '0 auto 3rem' }}>
+      <div style={{ position: 'relative', width: '180px', height: `${TUBE_HEIGHT + 80}px`, margin: '0 auto 3rem' }}>
+
+        {/* Milestone ticks - pixel-based positioning relative to tube */}
+        {MILESTONES.map(m => {
+          const bottomPx = (m.pct / 100) * TUBE_HEIGHT + 30
+          return (
+            <div key={m.pct} style={{
+              position: 'absolute',
+              bottom: `${bottomPx}px`,
+              left: 'calc(50% + 43px)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+            }}>
+              <div style={{ width: '16px', height: '2px', background: pct >= m.pct ? m.color : '#555', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.75rem', color: pct >= m.pct ? m.color : '#777', fontWeight: 600 }}>
+                {m.label}
+              </span>
+            </div>
+          )
+        })}
+
         {/* Glass tube */}
         <div style={{
           position: 'absolute',
-          bottom: 0,
+          top: 0,
           left: '50%',
           transform: 'translateX(-50%)',
           width: '80px',
-          height: '360px',
+          height: `${TUBE_HEIGHT}px`,
           border: '3px solid #c5a028',
           borderRadius: '40px 40px 0 0',
           overflow: 'hidden',
@@ -116,7 +148,7 @@ export default function Home() {
         {/* Bulb at bottom */}
         <div style={{
           position: 'absolute',
-          bottom: '-30px',
+          top: `${TUBE_HEIGHT - 10}px`,
           left: '50%',
           transform: 'translateX(-50%)',
           width: '80px',
@@ -127,30 +159,10 @@ export default function Home() {
           transition: 'background 0.5s',
           boxShadow: `0 0 20px ${pct > 0 ? fillColor + '80' : 'transparent'}`,
         }} />
-
-        {/* Milestone ticks */}
-        {MILESTONES.map(m => (
-          <div key={m.pct} style={{
-            position: 'absolute',
-            right: '-60px',
-            bottom: `calc(${m.pct}% * 3.6px + 30px)`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}>
-            <div style={{ width: '16px', height: '2px', background: pct >= m.pct ? m.color : '#555' }} />
-            <span style={{ fontSize: '0.7rem', color: pct >= m.pct ? m.color : '#555', fontWeight: 600 }}>
-              {m.label}
-            </span>
-          </div>
-        ))}
       </div>
 
       {/* Amount display */}
-      <div style={{
-        textAlign: 'center',
-        marginTop: '2rem',
-      }}>
+      <div style={{ textAlign: 'center' }}>
         <div style={{
           fontSize: 'clamp(2rem, 6vw, 4rem)',
           fontWeight: 700,
@@ -164,12 +176,7 @@ export default function Home() {
         <div style={{ color: '#a09070', fontSize: '1rem', marginTop: '0.5rem' }}>
           raised of {formatCurrency(GOAL)} goal
         </div>
-        <div style={{
-          marginTop: '1rem',
-          fontSize: '1.5rem',
-          fontWeight: 600,
-          color: '#e8d5a3',
-        }}>
+        <div style={{ marginTop: '1rem', fontSize: '1.5rem', fontWeight: 600, color: '#e8d5a3' }}>
           {pct.toFixed(1)}%
         </div>
       </div>
