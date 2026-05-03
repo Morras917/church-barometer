@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import html2canvas from "html2canvas";
 import Link from "next/link";
 
 interface FundraisingData {
@@ -18,6 +19,7 @@ export default function BarometerClient({ initialData }: { initialData: Fundrais
   const [showCelebration, setShowCelebration] = useState(false);
   const animRef = useRef<number | null>(null);
   const prevRef = useRef(initialData.current);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   // Animate the counter when value changes
   function animateTo(target: number) {
@@ -117,6 +119,25 @@ export default function BarometerClient({ initialData }: { initialData: Fundrais
     return n.toLocaleString("en-ZA");
   }
 
+  // Download barometer as image
+  const handleDownload = useCallback(async () => {
+    if (!captureRef.current) return;
+    try {
+      const canvas = await html2canvas(captureRef.current, {
+        backgroundColor: "#0d1117",
+        scale: 3,
+        useCORS: true,
+        logging: false,
+      });
+      const link = document.createElement("a");
+      link.download = `organ-fund-${data.currency}${formatFull(data.current)}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  }, [data]);
+
   // Color based on progress
   const overflowColor = "#4ade80"; // green for overflow
   const fillColor =
@@ -182,6 +203,9 @@ export default function BarometerClient({ initialData }: { initialData: Fundrais
           ))}
         </div>
       )}
+
+      {/* Capturable area for download */}
+      <div ref={captureRef} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "2rem 2rem 2.5rem", position: "relative" }}>
 
       {/* Decorative arch top */}
       <svg width="400" height="60" viewBox="0 0 400 60" style={{ marginBottom: "-10px", opacity: 0.4 }}>
@@ -508,7 +532,6 @@ export default function BarometerClient({ initialData }: { initialData: Fundrais
         background: "rgba(255,255,255,0.06)",
         borderRadius: "2px",
         overflow: "hidden",
-        marginBottom: "2.5rem",
         position: "relative",
         zIndex: 1,
       }}>
@@ -521,6 +544,40 @@ export default function BarometerClient({ initialData }: { initialData: Fundrais
           boxShadow: `0 0 8px ${fillColor}`,
         }} />
       </div>
+
+      </div>{/* End capturable area */}
+
+      {/* Download button */}
+      <button
+        onClick={handleDownload}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.4rem",
+          margin: "1.5rem 0 2rem",
+          padding: "0.5rem 1.4rem",
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(201,168,76,0.3)",
+          borderRadius: "20px",
+          color: "#c9a84c",
+          fontFamily: "'Cinzel', serif",
+          fontSize: "0.7rem",
+          letterSpacing: "0.15em",
+          cursor: "pointer",
+          position: "relative",
+          zIndex: 1,
+          transition: "all 0.3s",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,168,76,0.15)"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.6)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.3)"; }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        DOWNLOAD IMAGE
+      </button>
 
       {/* Live indicator */}
       <div style={{
