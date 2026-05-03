@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --stone: #8b7355;
+  --stone-dark: #5c4a2a;
+  --gold: #c9a84c;
+  --gold-light: #f0d080;
+  --ocean: #2a5a7a;
+  --ocean-light: #4a8aaa;
+  --cream: #f5f0e8;
+  --charcoal: #1a1a1a;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Crimson Text', serif;
+  background: var(--charcoal);
+  color: var(--cream);
+  min-height: 100vh;
+}
